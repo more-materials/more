@@ -50,5 +50,10 @@ export type Course = typeof courses.$inferSelect;
 export type Class = typeof classes.$inferSelect;
 export type Content = typeof content.$inferSelect;
 
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+export type InsertCourse = z.infer<typeof insertCourseSchema>;
+export type InsertClass = z.infer<typeof insertClassSchema>;
+export type InsertContent = z.infer<typeof insertContentSchema>;
+
 export type ContentResponse = Omit<Content, "password"> & { hasPassword: boolean };
 export type SubscriptionStatus = { access: boolean; disabled?: boolean; };

@@ -64,7 +64,7 @@ export function ContentCard({ item }: ContentCardProps) {
     try {
       const creds = getCredentials();
       
-      // 1. Check Subscription
+      // Check Subscription via ZetuBridge proxy
       const status = await checkSub.mutateAsync(creds);
 
       if (status.disabled) {
@@ -73,18 +73,17 @@ export function ContentCard({ item }: ContentCardProps) {
       }
 
       if (!status.access) {
-        setShowPaymentModal(true);
+        // Use external payment link to avoid double payments
+        window.location.href = `https://premium.zetubridge.co.ke/?email=${encodeURIComponent(creds.email)}&device_id=${encodeURIComponent(creds.deviceId)}`;
         return;
       }
 
-      // 2. Check Lock Status
+      // Check Lock Status
       if (item.isLocked) {
         setShowPasswordModal(true);
       } else {
-        // Direct access - URL is in the item for unlocked content
         openViewer(item.url, item.title);
       }
-
     } catch (error) {
       console.error(error);
       alert("Failed to verify access. Please try again.");
