@@ -1,18 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   useDepartments, useCreateDepartment, useDeleteDepartment,
   useCourses, useCreateCourse, useDeleteCourse,
   useClasses, useCreateClass, useDeleteClass,
   useContent, useCreateContent, useDeleteContent 
 } from "@/hooks/use-med-a";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertDepartmentSchema, insertCourseSchema, insertClassSchema, insertContentSchema } from "@shared/schema";
-import { Plus, Trash2, FolderOpen, FileText, Lock, LayoutGrid, GraduationCap, School } from "lucide-react";
+import { Plus, Trash2, FolderOpen, FileText, Lock, LayoutGrid, GraduationCap, School, LogOut, Copy, Check, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, collection } from "firebase/firestore";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +49,8 @@ function Manager({
   onCreate, 
   schema, 
   fields, 
-  icon: Icon 
+  icon: Icon,
+  firestoreColl
 }: { 
   title: string, 
   data: any[], 
@@ -53,18 +58,28 @@ function Manager({
   onCreate: any, 
   schema: any, 
   fields: any[], 
-  icon: any 
+  icon: any,
+  firestoreColl: string
 }) {
   const [open, setOpen] = useState(false);
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: fields.reduce((acc, f) => ({ ...acc, [f.name]: f.type === 'number' ? undefined : "" }), {}),
+    defaultValues: fields.reduce((acc, f) => ({ ...acc, [f.name]: f.type === 'number' ? undefined : (f.defaultValue || "") }), {}),
   });
 
   const onSubmit = async (vals: any) => {
-    await onCreate.mutateAsync(vals);
-    form.reset();
-    setOpen(false);
+    try {
+      const created = await onCreate.mutateAsync(vals);
+      // Automatically sync to Firebase Firestore
+      await setDoc(doc(collection(db, firestoreColl), String(created.id)), {
+        ...created,
+        syncedAt: new Date().toISOString()
+      });
+      form.reset();
+      setOpen(false);
+    } catch (err: any) {
+      console.error("Sync error:", err);
+    }
   };
 
   return (
@@ -92,6 +107,10 @@ function Manager({
                             <FormControl><SelectTrigger><SelectValue placeholder={f.placeholder} /></SelectTrigger></FormControl>
                             <SelectContent>{f.options.map((o: any) => <SelectItem key={o.id} value={String(o.id)}>{o.name}</SelectItem>)}</SelectContent>
                           </Select>
+                        ) : f.type === 'boolean' ? (
+                          <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        ) : f.type === 'textarea' ? (
+                          <FormControl><Textarea placeholder={f.placeholder} {...field} /></FormControl>
                         ) : (
                           <FormControl><Input placeholder={f.placeholder} {...field} type={f.inputType || 'text'} /></FormControl>
                         )}
@@ -100,7 +119,9 @@ function Manager({
                     )}
                   />
                 ))}
-                <Button type="submit" disabled={onCreate.isPending} className="w-full">Create</Button>
+                <Button type="submit" disabled={onCreate.isPending} className="w-full">
+                  {onCreate.isPending ? <Loader2 className="animate-spin" /> : "Create & Sync"}
+                </Button>
               </form>
             </Form>
           </DialogContent>
@@ -122,6 +143,11 @@ function Manager({
 }
 
 export default function AdminDashboard() {
+  const { user, loading, logout } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
   const depts = useDepartments();
   const createDept = useCreateDepartment();
   const deleteDept = useDeleteDepartment();
@@ -138,14 +164,45 @@ export default function AdminDashboard() {
   const createContent = useCreateContent();
   const deleteContent = useDeleteContent();
 
+  const studentUrl = window.location.origin + "/dashboard";
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(studentUrl);
+    setCopied(true);
+    toast({ title: "Copied!", description: "Student side URL copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin" /></div>;
+  if (!user) {
+    setLocation("/admin");
+    return null;
+  }
+
   return (
     <div className="container max-w-screen-xl py-8 px-4">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-6 rounded-2xl border shadow-sm">
+        <div className="space-y-1">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage hierarchy and content.</p>
+          <p className="text-muted-foreground">Manage hierarchy and educational content.</p>
         </div>
-        <Link href="/"><Button variant="outline">View Site</Button></Link>
+        
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-xl border flex-1 md:flex-none">
+            <code className="text-xs font-mono truncate max-w-[150px]">{studentUrl}</code>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={copyUrl}>
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+          <Link href="/dashboard">
+            <Button variant="outline" className="gap-2">
+              <ExternalLink size={16} /> Preview Site
+            </Button>
+          </Link>
+          <Button variant="destructive" className="gap-2" onClick={logout}>
+            <LogOut size={16} /> Logout
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="departments">
@@ -157,19 +214,27 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="departments">
-          <Manager title="Departments" data={depts.data || []} onCreate={createDept} onDelete={deleteDept} schema={insertDepartmentSchema} icon={LayoutGrid} fields={[{ name: "name", label: "Name", placeholder: "e.g. Medicine" }]} />
+          <Manager title="Departments" data={depts.data || []} onCreate={createDept} onDelete={deleteDept} schema={insertDepartmentSchema} icon={LayoutGrid} firestoreColl="departments" fields={[{ name: "name", label: "Name", placeholder: "e.g. Medicine" }]} />
         </TabsContent>
 
         <TabsContent value="courses">
-          <Manager title="Courses" data={courses.data || []} onCreate={createCourse} onDelete={deleteCourse} schema={insertCourseSchema} icon={GraduationCap} fields={[{ name: "departmentId", label: "Department", placeholder: "Select Department", options: depts.data, type: 'number' }, { name: "name", label: "Name", placeholder: "e.g. Clinical Medicine" }]} />
+          <Manager title="Courses" data={courses.data || []} onCreate={createCourse} onDelete={deleteCourse} schema={insertCourseSchema} icon={GraduationCap} firestoreColl="courses" fields={[{ name: "departmentId", label: "Department", placeholder: "Select Department", options: depts.data, type: 'number' }, { name: "name", label: "Name", placeholder: "e.g. Clinical Medicine" }]} />
         </TabsContent>
 
         <TabsContent value="classes">
-          <Manager title="Classes" data={classes.data || []} onCreate={createClass} onDelete={deleteClass} schema={insertClassSchema} icon={School} fields={[{ name: "courseId", label: "Course", placeholder: "Select Course", options: courses.data, type: 'number' }, { name: "name", label: "Name", placeholder: "e.g. Sep 2023 Intake" }]} />
+          <Manager title="Classes" data={classes.data || []} onCreate={createClass} onDelete={deleteClass} schema={insertClassSchema} icon={School} firestoreColl="classes" fields={[{ name: "courseId", label: "Course", placeholder: "Select Course", options: courses.data, type: 'number' }, { name: "name", label: "Name", placeholder: "e.g. Sep 2023 Intake" }]} />
         </TabsContent>
 
         <TabsContent value="content">
-          <Manager title="Content" data={content.data || []} onCreate={createContent} onDelete={deleteContent} schema={insertContentSchema} icon={FileText} fields={[{ name: "classId", label: "Class", placeholder: "Select Class", options: classes.data, type: 'number' }, { name: "title", label: "Title", placeholder: "e.g. Anatomy Notes" }, { name: "type", label: "Type", placeholder: "Select Type", options: [{id: 'notes', name: 'Notes'}, {id: 'past_paper', name: 'Past Paper'}, {id: 'book', name: 'Book'}, {id: 'fqe', name: 'FQE'}] }, { name: "url", label: "URL", placeholder: "https://..." }]} />
+          <Manager title="Content" data={content.data || []} onCreate={createContent} onDelete={deleteContent} schema={insertContentSchema} icon={FileText} firestoreColl="content" fields={[
+            { name: "classId", label: "Class", placeholder: "Select Class", options: classes.data, type: 'number' },
+            { name: "title", label: "Title", placeholder: "e.g. Anatomy Notes" },
+            { name: "description", label: "Description", placeholder: "Short description...", type: 'textarea' },
+            { name: "type", label: "Type", placeholder: "Select Type", options: [{id: 'notes', name: 'Notes'}, {id: 'past_paper', name: 'Past Paper'}, {id: 'book', name: 'Book'}, {id: 'fqe', name: 'FQE'}] },
+            { name: "url", label: "URL", placeholder: "https://..." },
+            { name: "isLocked", label: "Password Protection", type: 'boolean', defaultValue: false },
+            { name: "password", label: "Access Password", placeholder: "Leave empty if not locked" }
+          ]} />
         </TabsContent>
       </Tabs>
     </div>

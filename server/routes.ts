@@ -36,7 +36,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.sendStatus(204);
   });
 
-  app.get(api.content.list.path, async (req, res) => res.json(await storage.getContent()));
+  app.get(api.content.list.path, async (req, res) => {
+    const classId = req.query.classId ? Number(req.query.classId) : undefined;
+    res.json(await storage.getContent(classId));
+  });
   app.post(api.content.create.path, async (req, res) => {
     const item = await storage.createContent(api.content.create.input.parse(req.body));
     res.status(201).json(item);

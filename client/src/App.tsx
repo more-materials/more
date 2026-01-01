@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,15 +10,25 @@ import Viewer from "@/pages/Viewer";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
 function Router() {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin" /></div>;
+
   return (
     <div className="min-h-screen bg-background font-sans">
       <Navbar />
       <main>
         <Switch>
-          <Route path="/admin" component={AdminLogin} />
-          <Route path="/admin/dashboard" component={AdminDashboard} />
+          <Route path="/admin">
+            {user ? <Redirect to="/admin/dashboard" /> : <AdminLogin />}
+          </Route>
+          <Route path="/admin/dashboard">
+            {user ? <AdminDashboard /> : <Redirect to="/admin" />}
+          </Route>
           <Route path="/" component={Home} />
           <Route path="/dashboard" component={StudentDashboard} />
           <Route path="/viewer" component={Viewer} />
