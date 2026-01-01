@@ -1,18 +1,33 @@
 import { db } from "./db";
 import {
+  departments,
+  courses,
   classes,
   content,
+  type InsertDepartment,
+  type InsertCourse,
   type InsertClass,
   type InsertContent,
+  type Department,
+  type Course,
   type Class,
   type Content,
-  type UpdateContentRequest
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
+  // Departments
+  getDepartments(): Promise<Department[]>;
+  createDepartment(dept: InsertDepartment): Promise<Department>;
+  deleteDepartment(id: number): Promise<void>;
+
+  // Courses
+  getCoursesByDepartment(departmentId?: number): Promise<Course[]>;
+  createCourse(course: InsertCourse): Promise<Course>;
+  deleteCourse(id: number): Promise<void>;
+
   // Classes
-  getClasses(): Promise<Class[]>;
+  getClassesByCourse(courseId?: number): Promise<Class[]>;
   createClass(cls: InsertClass): Promise<Class>;
   deleteClass(id: number): Promise<void>;
 
@@ -22,14 +37,51 @@ export interface IStorage {
   createContent(item: InsertContent): Promise<Content>;
   deleteContent(id: number): Promise<void>;
   
-  // Verify Password (Internal helper)
   verifyContentPassword(id: number, password: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // Departments
+  async getDepartments(): Promise<Department[]> {
+    return await db.select().from(departments).orderBy(desc(departments.createdAt));
+  }
+
+  async createDepartment(dept: InsertDepartment): Promise<Department> {
+    const [newDept] = await db.insert(departments).values(dept).returning();
+    return newDept;
+  }
+
+  async deleteDepartment(id: number): Promise<void> {
+    await db.delete(departments).where(eq(departments.id, id));
+  }
+
+  // Courses
+  async getCoursesByDepartment(departmentId?: number): Promise<Course[]> {
+    let query = db.select().from(courses);
+    if (departmentId) {
+      // @ts-ignore
+      query = query.where(eq(courses.departmentId, departmentId));
+    }
+    return await query.orderBy(desc(courses.createdAt));
+  }
+
+  async createCourse(course: InsertCourse): Promise<Course> {
+    const [newCourse] = await db.insert(courses).values(course).returning();
+    return newCourse;
+  }
+
+  async deleteCourse(id: number): Promise<void> {
+    await db.delete(courses).where(eq(courses.id, id));
+  }
+
   // Classes
-  async getClasses(): Promise<Class[]> {
-    return await db.select().from(classes).orderBy(desc(classes.createdAt));
+  async getClassesByCourse(courseId?: number): Promise<Class[]> {
+    let query = db.select().from(classes);
+    if (courseId) {
+      // @ts-ignore
+      query = query.where(eq(classes.courseId, courseId));
+    }
+    return await query.orderBy(desc(classes.createdAt));
   }
 
   async createClass(cls: InsertClass): Promise<Class> {
@@ -45,7 +97,7 @@ export class DatabaseStorage implements IStorage {
   async getContentByClass(classId?: number): Promise<Content[]> {
     let query = db.select().from(content);
     if (classId) {
-      // @ts-ignore - simple where clause
+      // @ts-ignore
       query = query.where(eq(content.classId, classId));
     }
     return await query.orderBy(desc(content.createdAt));
@@ -67,7 +119,7 @@ export class DatabaseStorage implements IStorage {
 
   async verifyContentPassword(id: number, password: string): Promise<boolean> {
     const [item] = await db.select().from(content).where(eq(content.id, id));
-    if (!item || !item.isLocked) return true; // If not locked, 'true' (accessible)
+    if (!item || !item.isLocked) return true;
     return item.password === password;
   }
 }
