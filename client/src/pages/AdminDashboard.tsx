@@ -4,10 +4,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertClassSchema, insertContentSchema } from "@shared/schema";
 import { z } from "zod";
-import { Plus, Trash2, FolderOpen, FileText, Lock, Unlock } from "lucide-react";
+import { Plus, Trash2, FolderOpen, FileText, Lock, Unlock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Link } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -342,9 +343,16 @@ function ContentManager() {
 export default function AdminDashboard() {
   return (
     <div className="container max-w-screen-xl py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold text-accent">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Manage system content and configuration.</p>
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-accent">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Manage system content and configuration.</p>
+        </div>
+        <Link href="/">
+          <Button variant="outline" className="gap-2">
+            <ExternalLink size={16} /> View Student Side
+          </Button>
+        </Link>
       </div>
 
       <Tabs defaultValue="classes" className="w-full">

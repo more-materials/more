@@ -17,11 +17,11 @@ function Router() {
       <Navbar />
       <main>
         <Switch>
+          <Route path="/admin" component={AdminLogin} />
+          <Route path="/admin/dashboard" component={AdminDashboard} />
           <Route path="/" component={Home} />
           <Route path="/dashboard" component={StudentDashboard} />
           <Route path="/viewer" component={Viewer} />
-          <Route path="/admin" component={AdminLogin} />
-          <Route path="/admin/dashboard" component={AdminDashboard} />
           <Route component={NotFound} />
         </Switch>
       </main>

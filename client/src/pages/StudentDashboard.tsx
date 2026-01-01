@@ -23,7 +23,11 @@ export default function StudentDashboard() {
 
   // Client-side filtering
   const filteredContent = content?.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const itemClass = classes?.find(c => c.id === item.classId);
+    const matchesSearch = 
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      itemClass?.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === "all" || item.type === filterType;
     return matchesSearch && matchesType;
   });
@@ -60,21 +64,27 @@ export default function StudentDashboard() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input 
-            placeholder="Search by title..." 
+            placeholder="Search documents, courses, or classes..." 
             className="pl-10 h-12 rounded-xl border-border bg-background"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <Tabs value={filterType} onValueChange={setFilterType} className="w-full md:w-auto">
-          <TabsList className="h-12 w-full md:w-auto p-1 bg-muted rounded-xl">
-            <TabsTrigger value="all" className="rounded-lg h-full px-4">All</TabsTrigger>
-            <TabsTrigger value="past_paper" className="rounded-lg h-full px-4">Papers</TabsTrigger>
-            <TabsTrigger value="notes" className="rounded-lg h-full px-4">Notes</TabsTrigger>
-            <TabsTrigger value="book" className="rounded-lg h-full px-4">Books</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="w-full md:w-48">
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="h-12 rounded-xl border-border bg-background">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="past_paper">Past Papers</SelectItem>
+              <SelectItem value="notes">Notes</SelectItem>
+              <SelectItem value="book">Books</SelectItem>
+              <SelectItem value="fqe">FQE</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Content Grid */}

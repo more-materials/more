@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Content } from "@shared/schema";
-import { useCheckSubscription, useVerifyContent } from "@/hooks/use-med-a";
+import { Content, Class } from "@shared/schema";
+import { useCheckSubscription, useVerifyContent, useClasses } from "@/hooks/use-med-a";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { 
   Lock, 
   Unlock, 
@@ -10,7 +11,8 @@ import {
   FileQuestion, 
   Library, 
   Loader2, 
-  ExternalLink 
+  ExternalLink,
+  GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,10 +45,12 @@ export function ContentCard({ item }: ContentCardProps) {
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
+  const { data: classes } = useClasses();
   const checkSub = useCheckSubscription();
   const verifyContent = useVerifyContent();
 
   const Icon = ICONS[item.type as keyof typeof ICONS] || FileText;
+  const itemClass = classes?.find(c => c.id === item.classId);
 
   // Get credentials from storage (simulated for now if missing)
   const getCredentials = () => {
@@ -140,6 +144,13 @@ export function ContentCard({ item }: ContentCardProps) {
             "bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300"
           )}>
             <Icon size={24} />
+          </div>
+
+          <div className="flex items-center gap-1.5 mb-1">
+            <GraduationCap size={14} className="text-primary/60" />
+            <span className="text-xs font-medium text-primary/60 uppercase tracking-wider">
+              {itemClass?.name || "General"}
+            </span>
           </div>
 
           <h3 className="mb-2 font-display text-lg font-bold text-accent line-clamp-1">
