@@ -23,13 +23,16 @@ function Router() {
       <Navbar />
       <main>
         <Switch>
+          <Route path="/">
+            <Redirect to="/admin" />
+          </Route>
           <Route path="/admin">
             {user ? <Redirect to="/admin/dashboard" /> : <AdminLogin />}
           </Route>
           <Route path="/admin/dashboard">
             {user ? <AdminDashboard /> : <Redirect to="/admin" />}
           </Route>
-          <Route path="/" component={Home} />
+          <Route path="/home" component={Home} />
           <Route path="/dashboard" component={StudentDashboard} />
           <Route path="/viewer" component={Viewer} />
           <Route component={NotFound} />
