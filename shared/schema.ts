@@ -2,8 +2,6 @@ import { pgTable, text, serial, boolean, timestamp, integer } from "drizzle-orm/
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// === TABLE DEFINITIONS ===
-
 export const departments = pgTable("departments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -42,44 +40,15 @@ export const admins = pgTable("admins", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// === SCHEMAS ===
-
 export const insertDepartmentSchema = createInsertSchema(departments).omit({ id: true, createdAt: true });
 export const insertCourseSchema = createInsertSchema(courses).omit({ id: true, createdAt: true });
 export const insertClassSchema = createInsertSchema(classes).omit({ id: true, createdAt: true });
 export const insertContentSchema = createInsertSchema(content).omit({ id: true, createdAt: true });
 
-// === EXPLICIT TYPES ===
-
 export type Department = typeof departments.$inferSelect;
-export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
-
 export type Course = typeof courses.$inferSelect;
-export type InsertCourse = z.infer<typeof insertCourseSchema>;
-
 export type Class = typeof classes.$inferSelect;
-export type InsertClass = z.infer<typeof insertClassSchema>;
-
 export type Content = typeof content.$inferSelect;
-export type InsertContent = z.infer<typeof insertContentSchema>;
 
-// Request Types
-export type CreateDepartmentRequest = InsertDepartment;
-export type CreateCourseRequest = InsertCourse;
-export type CreateClassRequest = InsertClass;
-export type CreateContentRequest = InsertContent;
-export type UpdateContentRequest = Partial<InsertContent>;
-
-export type VerifyPasswordRequest = {
-  contentId: number;
-  password: string;
-};
-
-// Response Types
 export type ContentResponse = Omit<Content, "password"> & { hasPassword: boolean };
-
-// ZetuBridge Response Type
-export type SubscriptionStatus = {
-  access: boolean;
-  disabled?: boolean;
-};
+export type SubscriptionStatus = { access: boolean; disabled?: boolean; };
