@@ -1,0 +1,318 @@
+Build a web-based system called MED-A Content Extension System. Ensure you use firebase, just prompt me to fill my firebase details.
+
+This system acts as an additional content source for an existing Android app called MED-A.
+Although it is technically a separate web system, it must feel and behave as a native part of the MED-A app when opened inside a WebView.
+
+
+1️⃣ PURPOSE OF THE SYSTEM
+
+The MED-A Android app is locally installed and cannot be updated frequently.
+
+This system exists to deliver new and additional learning materials that are not bundled inside the app.
+
+Students must perceive this system as another section of MED-A, not as a separate website.
+
+Students will use this system only when content is missing from the main app.
+
+2️⃣ SYSTEM STRUCTURE (TWO COMPLETELY SEPARATE SIDES)
+
+A. STUDENT SIDE (PUBLIC, NO LOGIN)
+
+Students must never log in
+
+No signup, no authentication, no user accounts
+
+Students are identified ONLY using:
+
+device_id (stored in localStorage by the Android app)
+
+email (stored in localStorage)
+
+The student side:
+
+Reads content metadata from Firebase
+
+Checks subscription status using an external existing payment server
+
+Securely opens learning materials inside the system
+
+
+B. ADMIN DASHBOARD (PRIVATE, AUTHENTICATED)
+
+Admin login via Firebase Authentication
+
+No signup
+
+Admin accounts are manually created
+
+Admin dashboard is completely isolated from student logic
+
+Admin dashboard must include a visible link to the student system
+
+
+3️⃣ CONTENT MANAGED BY THE SYSTEM
+
+The system manages learning material metadata only (not subscriptions).
+
+Content categories include:
+
+KMTC Past Papers
+
+KMTC Answered Past Papers
+
+Notes
+
+Books
+
+FQE Past Papers
+
+
+Admin capabilities:
+
+Create and manage classes (e.g. DPT 1.1, DPT 2.2, OT 1.1, etc. These will be added by admin as many as he wants)
+
+Assign materials to:
+
+A class
+
+A content type
+
+
+Behavior rules:
+
+If a class exists but has no content:
+
+Students see “No materials available at the moment”
+
+Display a small “upload in progress” indicator
+
+
+If a class does not exist:
+
+Students must not see it at all
+
+4️⃣ ADMIN CONTENT PUBLISHING FLOW
+
+Admin workflow:
+
+1. Log in to the admin dashboard
+
+
+2. Click Add Content
+
+
+3. Select:
+
+Content type (Past Papers, Notes, Books, FQE, etc.)
+
+Class
+
+
+
+4. Enter:
+
+Title
+
+Optional description
+
+Document URL (e.g. Heyzine flipbook)
+
+
+
+5. Choose content access type:
+
+🔓 Unlocked
+
+🔒 Locked (password-protected)
+
+
+
+6. If locked:
+
+Admin enters the password
+
+Password is stored securely
+
+Password must never be appended to the URL
+
+
+5️⃣ DOCUMENT & FLIPBOOK SECURITY (CRITICAL)
+
+Documents (Heyzine flipbooks, PDFs, etc.) must:
+
+Load inside the system only
+
+Never open externally
+
+Never expose direct URLs
+
+
+For password-protected documents:
+
+Password must be sent via POST, never via URL
+
+Viewer must use an internal page with session or token validation
+
+
+Even if:
+
+Internet disconnects
+
+Page refreshes
+
+User inspects source code
+
+
+The document URL must remain protected and unusable outside the system.
+
+
+6️⃣ SUBSCRIPTION & PAYMENT (EXACT REQUIRED BEHAVIOR)
+
+❗ PAYMENT SERVER RULE (VERY IMPORTANT)
+
+The system MUST use the same payment and subscription server already used by the MED-A app
+
+The system MUST NOT create, store, or manage subscriptions
+
+The payment server and this system’s server are separate systems
+
+
+Existing payment server endpoints (DO NOT CHANGE):
+
+GET  https://api.zetubridge.co.ke/verify-access
+
+POST https://api.zetubridge.co.ke/initiate-payment
+
+GET  https://api.zetubridge.co.ke/plans
+
+
+SUBSCRIPTION CHECK FLOW (STRICT ORDER)
+
+1. Check legacy subscription stored in localStorage.subscription
+
+If valid → allow access immediately
+
+
+
+2. Confirm internet connectivity
+
+If offline → block and retry
+
+
+
+3. Call payment server:
+
+GET /verify-access?email={email}&device_id={device_id}
+
+
+4. Interpret response:
+
+{ disabled: true } → permanently block user
+
+{ access: true } → allow document opening
+
+{ access: false } → require payment
+
+
+WHEN TO CHARGE
+
+Students may browse content freely
+
+Charge ONLY when:
+
+A student clicks a document
+
+
+Before charging:
+
+Re-check /verify-access
+
+
+If subscription already exists:
+
+Do NOT charge again
+
+7️⃣ STUDENT EXPERIENCE FLOW
+
+1. Student opens “More Materials” from the MED-A app
+
+
+2. Welcome animation and MED-A branding
+
+
+3. Student selects their class
+
+
+4. System fetches available content
+
+
+5. Student clicks a document:
+
+Subscription is checked
+
+If subscribed → document opens
+
+If not → payment flow starts
+
+
+
+6. After payment:
+
+Subscription is re-verified
+
+Document opens automatically
+
+
+8️⃣ PREVENTING LINK EXPOSURE & ABUSE
+
+No document URL must ever appear in:
+
+HTML
+
+JavaScript
+
+Browser address bar
+
+
+All document access must go through:
+
+Server-validated routes
+
+Short-lived access tokens
+
+
+Content must fail safely if:
+
+Internet drops
+
+Session expires
+
+9️⃣ TECHNOLOGY CONSTRAINTS
+
+Frontend: HTML, CSS, JavaScript
+
+Backend (system server): Node.js + Express
+
+Database: Firebase Firestore (separate project)
+
+Authentication: Firebase Authentication (admin only)
+
+Payment & subscription: External existing server (unchanged)
+
+Hosting:
+
+Frontend: GitHub Pages or equivalent
+
+Backend: Any Node-compatible hosting
+
+🔚 FINAL ABSOLUTE RULE
+
+This system must behave as if it is a native extension of the MED-A app, while remaining technically independent, secure, and scalable.
+
+Remember the device ID and email to check payment are stored in the app WebView local storage
+
+
+
+My system logo; https://raw.githubusercontent.com/MODERN-SERVER/Assets/main/BackgroundEraser_20250906_184426881.png
+
+Kmtc school logo; https://raw.githubusercontent.com/MODERN-SERVER/Assets/main/BackgroundEraser_20251010_092733868.png
