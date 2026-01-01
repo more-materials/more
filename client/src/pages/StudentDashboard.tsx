@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDepartments, useCourses, useClasses, useContent } from "@/hooks/use-med-a";
 import { ContentCard } from "@/components/ContentCard";
-import { Search, BookOpen, ChevronRight } from "lucide-react";
+import { Search, BookOpen, ChevronRight, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export default function StudentDashboard() {
   const [selectedDept, setSelectedDept] = useState<string>("all");
@@ -42,13 +43,13 @@ export default function StudentDashboard() {
         <div className="flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto pb-2">
           <span>Home</span>
           <ChevronRight size={14} />
-          <span className={selectedDept !== "all" ? "text-primary font-medium" : ""}>
+          <span className={cn(selectedDept !== "all" ? "text-primary font-medium" : "")}>
             {depts?.find(d => String(d.id) === selectedDept)?.name || "Departments"}
           </span>
           {selectedDept !== "all" && (
             <>
               <ChevronRight size={14} />
-              <span className={selectedCourse !== "all" ? "text-primary font-medium" : ""}>
+              <span className={cn(selectedCourse !== "all" ? "text-primary font-medium" : "")}>
                 {allCourses?.find(c => String(c.id) === selectedCourse)?.name || "Courses"}
               </span>
             </>
@@ -56,44 +57,59 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Select value={selectedDept} onValueChange={(v) => { setSelectedDept(v); setSelectedCourse("all"); setSelectedClass("all"); }}>
-          <SelectTrigger className="h-12 rounded-xl bg-white border-border shadow-sm">
-            <SelectValue placeholder="Select Department" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            {depts?.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-accent/5 p-4 rounded-2xl border border-accent/10">
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-accent/60 ml-1">Department</label>
+          <Select value={selectedDept} onValueChange={(v) => { setSelectedDept(v); setSelectedCourse("all"); setSelectedClass("all"); }}>
+            <SelectTrigger className="h-12 rounded-xl bg-white border-border shadow-sm hover:border-accent/50 transition-colors">
+              <SelectValue placeholder="Select Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              {depts?.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select 
-          value={selectedCourse} 
-          onValueChange={(v) => { setSelectedCourse(v); setSelectedClass("all"); }}
-          disabled={selectedDept === "all"}
-        >
-          <SelectTrigger className="h-12 rounded-xl bg-white border-border shadow-sm">
-            <SelectValue placeholder="Select Course" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Courses</SelectItem>
-            {filteredCourses?.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-accent/60 ml-1">Course</label>
+          <Select 
+            value={selectedCourse} 
+            onValueChange={(v) => { setSelectedCourse(v); setSelectedClass("all"); }}
+            disabled={selectedDept === "all"}
+          >
+            <SelectTrigger className={cn(
+              "h-12 rounded-xl border-border shadow-sm transition-colors",
+              selectedDept === "all" ? "bg-muted/50" : "bg-white hover:border-accent/50"
+            )}>
+              <SelectValue placeholder="Select Course" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Courses</SelectItem>
+              {filteredCourses?.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select 
-          value={selectedClass} 
-          onValueChange={setSelectedClass}
-          disabled={selectedCourse === "all"}
-        >
-          <SelectTrigger className="h-12 rounded-xl bg-white border-border shadow-sm">
-            <SelectValue placeholder="Select Class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            {filteredClasses?.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-accent/60 ml-1">Class</label>
+          <Select 
+            value={selectedClass} 
+            onValueChange={setSelectedClass}
+            disabled={selectedCourse === "all"}
+          >
+            <SelectTrigger className={cn(
+              "h-12 rounded-xl border-border shadow-sm transition-colors",
+              selectedCourse === "all" ? "bg-muted/50" : "bg-white hover:border-accent/50"
+            )}>
+              <SelectValue placeholder="Select Class" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Classes</SelectItem>
+              {filteredClasses?.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-border/50 flex flex-col md:flex-row gap-4">
@@ -101,24 +117,27 @@ export default function StudentDashboard() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input 
             placeholder="Search documents..." 
-            className="pl-10 h-12 rounded-xl border-border bg-background"
+            className="pl-10 h-12 rounded-xl border-border bg-background focus-visible:ring-accent"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-full md:w-48 h-12 rounded-xl border-border bg-background">
-            <SelectValue placeholder="All Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="past_paper">Past Papers</SelectItem>
-            <SelectItem value="notes">Notes</SelectItem>
-            <SelectItem value="book">Books</SelectItem>
-            <SelectItem value="fqe">FQE</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-xl border min-w-[200px]">
+          <Filter size={16} className="ml-2 text-muted-foreground" />
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="border-0 bg-transparent shadow-none focus:ring-0">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="past_paper">Past Papers</SelectItem>
+              <SelectItem value="notes">Notes</SelectItem>
+              <SelectItem value="book">Books</SelectItem>
+              <SelectItem value="fqe">FQE</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading ? (

@@ -73,8 +73,8 @@ export function ContentCard({ item }: ContentCardProps) {
       }
 
       if (!status.access) {
-        // Use external payment link to avoid double payments
-        window.location.href = `https://premium.zetubridge.co.ke/?email=${encodeURIComponent(creds.email)}&device_id=${encodeURIComponent(creds.deviceId)}`;
+        // Use external payment page link
+        setLocation("/payment");
         return;
       }
 
@@ -128,15 +128,6 @@ export function ContentCard({ item }: ContentCardProps) {
         whileHover={{ y: -4 }}
         className="group relative overflow-hidden rounded-2xl bg-white border border-border/50 shadow-sm hover:shadow-lg transition-all duration-300"
       >
-        <div className="absolute top-0 right-0 p-3">
-          <div className={cn(
-            "rounded-full p-2 backdrop-blur-sm",
-            item.isLocked ? "bg-red-50 text-red-500" : "bg-teal-50 text-teal-500"
-          )}>
-            {item.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
-          </div>
-        </div>
-
         <div className="p-6">
           <div className={cn(
             "mb-4 inline-flex items-center justify-center rounded-xl p-3",
@@ -167,7 +158,7 @@ export function ContentCard({ item }: ContentCardProps) {
             {isChecking ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              item.isLocked ? "Unlock Access" : "Open Content"
+              "Open Content"
             )}
           </Button>
         </div>

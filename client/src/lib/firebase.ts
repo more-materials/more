@@ -14,3 +14,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+/**
+ * FIREBASE SECURITY RULES (Firestore):
+ * 
+ * service cloud.firestore {
+ *   match /databases/{database}/documents {
+ *     // Only authenticated admins can write to the database
+ *     match /{document=**} {
+ *       allow read: if true;
+ *       allow write: if request.auth != null;
+ *     }
+ *   }
+ * }
+ */
