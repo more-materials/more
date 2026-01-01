@@ -1,7 +1,113 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import { type InsertClass, type InsertContent } from "@shared/schema";
+import { type InsertClass, type InsertContent, type InsertDepartment, type InsertCourse } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+
+// ==========================================
+// DEPARTMENTS
+// ==========================================
+
+export function useDepartments() {
+  return useQuery({
+    queryKey: [api.departments.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.departments.list.path);
+      if (!res.ok) throw new Error("Failed to fetch departments");
+      return api.departments.list.responses[200].parse(await res.json());
+    },
+  });
+}
+
+export function useCreateDepartment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: InsertDepartment) => {
+      const res = await fetch(api.departments.create.path, {
+        method: api.departments.create.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create department");
+      return api.departments.create.responses[201].parse(await res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.departments.list.path] });
+      toast({ title: "Success", description: "Department created" });
+    },
+  });
+}
+
+export function useDeleteDepartment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.departments.delete.path, { id });
+      const res = await fetch(url, { method: api.departments.delete.method });
+      if (!res.ok) throw new Error("Failed to delete department");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.departments.list.path] });
+      toast({ title: "Success", description: "Department deleted" });
+    },
+  });
+}
+
+// ==========================================
+// COURSES
+// ==========================================
+
+export function useCourses() {
+  return useQuery({
+    queryKey: [api.courses.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.courses.list.path);
+      if (!res.ok) throw new Error("Failed to fetch courses");
+      return api.courses.list.responses[200].parse(await res.json());
+    },
+  });
+}
+
+export function useCreateCourse() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: InsertCourse) => {
+      const res = await fetch(api.courses.create.path, {
+        method: api.courses.create.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create course");
+      return api.courses.create.responses[201].parse(await res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.courses.list.path] });
+      toast({ title: "Success", description: "Course created" });
+    },
+  });
+}
+
+export function useDeleteCourse() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.courses.delete.path, { id });
+      const res = await fetch(url, { method: api.courses.delete.method });
+      if (!res.ok) throw new Error("Failed to delete course");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.courses.list.path] });
+      toast({ title: "Success", description: "Course deleted" });
+    },
+  });
+}
 
 // ==========================================
 // CLASSES
@@ -34,10 +140,7 @@ export function useCreateClass() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.classes.list.path] });
-      toast({ title: "Success", description: "Class created successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Success", description: "Class created" });
     },
   });
 }
@@ -67,7 +170,6 @@ export function useContent(classId?: string) {
   return useQuery({
     queryKey: [api.content.list.path, classId],
     queryFn: async () => {
-      // Build URL with query param if classId exists
       const url = classId 
         ? `${api.content.list.path}?classId=${classId}` 
         : api.content.list.path;
@@ -76,7 +178,6 @@ export function useContent(classId?: string) {
       if (!res.ok) throw new Error("Failed to fetch content");
       return api.content.list.responses[200].parse(await res.json());
     },
-    enabled: true, // Always enable, just might return empty or full list
   });
 }
 
@@ -86,7 +187,6 @@ export function useCreateContent() {
 
   return useMutation({
     mutationFn: async (data: InsertContent) => {
-      // Ensure booleans are handled if form sends strings (common with select inputs)
       const res = await fetch(api.content.create.path, {
         method: api.content.create.method,
         headers: { "Content-Type": "application/json" },
@@ -97,10 +197,7 @@ export function useCreateContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.content.list.path] });
-      toast({ title: "Success", description: "Content added successfully" });
-    },
-    onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Success", description: "Content added" });
     },
   });
 }
@@ -140,6 +237,31 @@ export function useCheckSubscription() {
   });
 }
 
+export function useInitiatePayment() {
+  return useMutation({
+    mutationFn: async (data: { email: string; deviceId: string; planId: string }) => {
+      const res = await fetch(api.subscription.initiate.path, {
+        method: api.subscription.initiate.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Payment initiation failed");
+      return api.subscription.initiate.responses[200].parse(await res.json());
+    },
+  });
+}
+
+export function usePaymentPlans() {
+  return useQuery({
+    queryKey: [api.subscription.plans.path],
+    queryFn: async () => {
+      const res = await fetch(api.subscription.plans.path);
+      if (!res.ok) throw new Error("Failed to fetch plans");
+      return api.subscription.plans.responses[200].parse(await res.json());
+    },
+  });
+}
+
 export function useVerifyContent() {
   return useMutation({
     mutationFn: async ({ contentId, password }: { contentId: number; password: string }) => {
@@ -149,14 +271,8 @@ export function useVerifyContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-      
-      if (res.status === 403) {
-        throw new Error("Invalid password");
-      }
-      if (!res.ok) {
-        throw new Error("Verification failed");
-      }
-      
+      if (res.status === 403) throw new Error("Invalid password");
+      if (!res.ok) throw new Error("Verification failed");
       return api.content.verify.responses[200].parse(await res.json());
     },
   });
